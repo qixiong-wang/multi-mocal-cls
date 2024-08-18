@@ -23,6 +23,8 @@ import gc
 from collections import OrderedDict
 from sklearn.metrics import (f1_score,
                              multilabel_confusion_matrix)
+from transformers import AutoTokenizer, AutoModelForMaskedLM
+
 
 def get_dataset(image_set, transform, args):
     from data.dataset_imdb_bert import ImdbDataset
@@ -162,6 +164,33 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
 
 
 def main(args):
+
+
+    # model initialization
+    print(args.model)
+    model = segmentation.__dict__[args.model](pretrained=args.pretrained_swin_weights,
+                                              args=args)
+    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model.cuda()
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
+    single_model = model.module
+
+    if args.model != 'lavt_one':
+        # tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
+        bert_model = AutoModelForMaskedLM.from_pretrained("./bert-base-uncased").bert
+        # model_class = BertModel
+        # bert_model = model_class.from_pretrained(args.ck_bert)
+        bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
+        bert_model.cuda()
+        bert_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
+        bert_model = torch.nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
+        single_bert_model = bert_model.module
+
+    else:
+        bert_model = None
+        single_bert_model = None
+
+
     dataset, num_classes = get_dataset("train",
                                        get_transform(args=args),
                                        args=args)
@@ -184,29 +213,7 @@ def main(args):
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=8, sampler=test_sampler, num_workers=args.workers)
-
-    # model initialization
-    print(args.model)
-    model = segmentation.__dict__[args.model](pretrained=args.pretrained_swin_weights,
-                                              args=args)
-    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    model.cuda()
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
-    single_model = model.module
-
-    if args.model != 'lavt_one':
-        model_class = BertModel
-        import pdb ; pdb.set_trace()
-        bert_model = model_class.from_pretrained(args.ck_bert)
-        bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
-        bert_model.cuda()
-        bert_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
-        bert_model = torch.nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
-        single_bert_model = bert_model.module
-    else:
-        bert_model = None
-        single_bert_model = None
-
+    
     # resume training
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -229,6 +236,7 @@ def main(args):
             {'params': backbone_decay},
             {"params": [p for p in single_model.classifier.parameters() if p.requires_grad]},
             # the following are the parameters of bert
+
             {"params": reduce(operator.concat,
                               [[p for p in single_bert_model.encoder.layer[i].parameters()
                                 if p.requires_grad] for i in range(10)])},

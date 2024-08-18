@@ -627,7 +627,7 @@ class PWAM(nn.Module):
     def forward(self, x, l, l_mask):
         # input x shape: (B, H*W, dim)
         vis = self.vis_project(x.permute(0, 2, 1))  # (B, dim, H*W)
-
+        # import pdb; pdb.set_trace()
         lang = self.image_lang_att(x, l, l_mask)  # (B, H*W, dim)
 
         lang = lang.permute(0, 2, 1)  # (B, dim, H*W)
