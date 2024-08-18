@@ -37,7 +37,7 @@ class SimpleDecoding(nn.Module):
 
         self.conv1_1 = nn.Conv2d(hidden_size, self.num_class, 1)
 
-    def forward(self, x_c4, x_c3, x_c2, x_c1):
+    def forward(self, x_c4, x_c3, x_c2, x_c1, l_feats):
         # fuse Y4 and Y3
         if x_c4.size(-2) < x_c3.size(-2) or x_c4.size(-1) < x_c3.size(-1):
             x_c4 = F.interpolate(input=x_c4, size=(x_c3.size(-2), x_c3.size(-1)), mode='bilinear', align_corners=True)
@@ -70,5 +70,6 @@ class SimpleDecoding(nn.Module):
         x = self.relu2_2(x)
         
         output = torch.mean(self.conv1_1(x), dim=[2,3], keepdim=True)
-        
+        import pdb; pdb.set_trace()
+
         return output

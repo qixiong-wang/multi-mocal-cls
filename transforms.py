@@ -7,7 +7,6 @@ from torchvision import transforms as T
 from torchvision.transforms import functional as F
 
 
-
 def pad_if_smaller(img, size, fill=0):
     min_size = min(img.size)
     if min_size < size:

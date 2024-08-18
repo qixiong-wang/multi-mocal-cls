@@ -16,7 +16,7 @@ class _LAVTSimpleDecode(nn.Module):
         input_shape = x.shape[-2:]
         features = self.backbone(x, l_feats, l_mask)
         x_c1, x_c2, x_c3, x_c4 = features
-        x = self.classifier(x_c4, x_c3, x_c2, x_c1)
+        x = self.classifier(x_c4, x_c3, x_c2, x_c1, l_feats)
         x = x.squeeze()
         return x
 
