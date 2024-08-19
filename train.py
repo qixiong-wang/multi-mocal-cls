@@ -192,9 +192,9 @@ def main(args):
 
 
     dataset, num_classes = get_dataset("train", get_transform(args=args), args=args)
-    dataset_test, _ = get_dataset("dev", get_transform(args=args), args=args)
+    dataset_test, _ = get_dataset("test", get_transform(args=args), args=args)
     print(len(dataset), len(dataset_test))
-    import pdb; pdb.set_trace()
+
 
     # batch sampler
     print(f"local rank {args.local_rank} / global rank {utils.get_rank()} successfully built train dataset.")
