@@ -35,7 +35,9 @@ class SimpleDecoding(nn.Module):
         self.bn2_2 = nn.BatchNorm2d(hidden_size)
         self.relu2_2 = nn.ReLU()
 
-        self.conv1_1 = nn.Conv2d(hidden_size, self.num_class, 1)
+        self.conv1_1 = nn.Conv2d(hidden_size, 768, 1)
+
+        self.fusion_fc = nn.Linear(768 * 2, self.num_class)
 
     def forward(self, x_c4, x_c3, x_c2, x_c1, l_feats):
         # fuse Y4 and Y3
@@ -69,7 +71,12 @@ class SimpleDecoding(nn.Module):
         x = self.bn2_2(x)
         x = self.relu2_2(x)
         
-        output = torch.mean(self.conv1_1(x), dim=[2,3], keepdim=True)
-        import pdb; pdb.set_trace()
+        img_feat = torch.mean(self.conv1_1(x), dim=[2,3], keepdim=False)
+        text_feat = torch.mean(l_feats,dim=[2], keepdim=False)
+
+
+        fuse_feat = torch.cat((img_feat,text_feat),dim=1)
+        # output = torch.mean(self.conv1_1(x), dim=[2,3], keepdim=True)
+        output = self.fusion_fc(fuse_feat)
 
         return output

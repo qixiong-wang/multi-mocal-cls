@@ -42,6 +42,7 @@ class ImdbDataset(data.Dataset):
         # json_list = os.listdir(self.JSON_DIR)
         # self.data_list = []
         self.tokenizer = BertTokenizer.from_pretrained(args.bert_tokenizer)
+        
 
         with open('mmimdb/split.json', 'r') as f:
             self.split_list = json.load(f)

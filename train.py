@@ -96,15 +96,15 @@ def evaluate(model, data_loader, bert_model):
     y_pred = torch.cat(y_pred).cpu().numpy()
     y_true = torch.cat(y_true).cpu().numpy()
 
-    _dev_f1_weighted = f1_score(y_true, y_pred, average="weighted")
-    _dev_f1_micro = f1_score(y_true, y_pred, average="micro")
-    _dev_f1_macro = f1_score(y_true, y_pred, average="macro")
-    _dev_f1_samples = f1_score(y_true, y_pred, average="samples")
+    f1_weighted = f1_score(y_true, y_pred, average="weighted")
+    f1_micro = f1_score(y_true, y_pred, average="micro")
+    f1_macro = f1_score(y_true, y_pred, average="macro")
+    f1_samples = f1_score(y_true, y_pred, average="samples")
 
-    print('_dev_f1_weighted:', _dev_f1_weighted)
-    print('_dev_f1_micro:',_dev_f1_micro)
-    print('_dev_f1_macro', _dev_f1_macro)
-    print('_dev_f1_samples',_dev_f1_samples)
+    print('f1_weighted:', f1_weighted)
+    print('f1_micro:',f1_micro)
+    print('f1_macro', f1_macro)
+    print('f1_samples',f1_samples)
 
     sample_num = np.sum(y_true, axis=0)
     for i, conf_matrix in enumerate(multilabel_confusion_matrix(y_true, y_pred)):
@@ -113,7 +113,7 @@ def evaluate(model, data_loader, bert_model):
         recall = tp / (tp + fn + sys.float_info.epsilon)
         print(f'Label: {label_to_class[i]} f1={f1:.5f} sample_num={sample_num[i]} recall={recall:.5f}')
 
-    return _dev_f1_weighted
+    return f1_weighted
 
 def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, print_freq,
                     iterations, bert_model):
@@ -191,13 +191,11 @@ def main(args):
         single_bert_model = None
 
 
-    dataset, num_classes = get_dataset("train",
-                                       get_transform(args=args),
-                                       args=args)
-    dataset_test, _ = get_dataset("test",
-                                  get_transform(args=args),
-                                  args=args)
+    dataset, num_classes = get_dataset("train", get_transform(args=args), args=args)
+    dataset_test, _ = get_dataset("dev", get_transform(args=args), args=args)
     print(len(dataset), len(dataset_test))
+    import pdb; pdb.set_trace()
+
     # batch sampler
     print(f"local rank {args.local_rank} / global rank {utils.get_rank()} successfully built train dataset.")
     num_tasks = utils.get_world_size()
