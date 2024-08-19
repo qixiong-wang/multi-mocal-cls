@@ -195,7 +195,6 @@ def main(args):
     dataset_test, _ = get_dataset("test", get_transform(args=args), args=args)
     print(len(dataset), len(dataset_test))
 
-
     # batch sampler
     print(f"local rank {args.local_rank} / global rank {utils.get_rank()} successfully built train dataset.")
     num_tasks = utils.get_world_size()
